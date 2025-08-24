@@ -5,8 +5,9 @@ import com.maneelak.stockpawn.service.StockItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.data.domain.Sort;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/stock-items")
@@ -18,8 +19,15 @@ public class StockItemController {
 
 
     @GetMapping
-    public ResponseEntity<List<StockItem>> getAll() {
-        return ResponseEntity.ok(stockItemService.getAllItems());
+    public ResponseEntity<List<StockItem>> getAll(
+            @RequestParam Optional<String> sortBy,
+            @RequestParam Optional<String> order) {
+
+        String sortField = sortBy.orElse("id");
+        Sort.Direction direction = order.orElse("asc").equalsIgnoreCase("desc") ?
+                                   Sort.Direction.DESC : Sort.Direction.ASC;
+
+        return ResponseEntity.ok(stockItemService.getAllItems(Sort.by(direction, sortField)));
     }
 
     @GetMapping("/{id}")

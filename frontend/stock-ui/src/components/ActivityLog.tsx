@@ -1,6 +1,5 @@
 interface Activity {
-  date: string;
-  time: string;
+  timestamp: string;
   description: string;
   type: "income" | "expense" | "neutral";
 }
@@ -18,10 +17,19 @@ export default function ActivityLog({ logs }: { logs: readonly Activity[] }) {
                 : log.type === "expense"
                 ? "text-red-600"
                 : "text-gray-800";
+            const dateObj = new Date(log.timestamp);
+            const date = dateObj.toLocaleDateString("th-TH", {
+              day: "numeric",
+              month: "short",
+            });
+            const time = dateObj.toLocaleTimeString("th-TH", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
             return (
               <li key={index} className="py-2">
                 <div className="text-sm text-gray-500">
-                  {log.date} เวลา {log.time} น.
+                  {date} เวลา {time} น.
                 </div>
                 <div className={`text-base font-medium ${color}`}>
                   {log.description}

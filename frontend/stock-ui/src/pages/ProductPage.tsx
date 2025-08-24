@@ -23,8 +23,8 @@ export interface StockType {
 
 type SortOption =
   | ""
-  | "weight-asc"
-  | "weight-desc"
+  | "weightInGrams-asc"
+  | "weightInGrams-desc"
   | "quantity-asc"
   | "quantity-desc";
 
@@ -78,9 +78,9 @@ export default function ProductPage() {
       );
     }
 
-    if (sortBy === "weight-asc") {
+    if (sortBy === "weightInGrams-asc") {
       filtered.sort((a, b) => a.weightValue - b.weightValue);
-    } else if (sortBy === "weight-desc") {
+    } else if (sortBy === "weightInGrams-desc") {
       filtered.sort((a, b) => b.weightValue - a.weightValue);
     } else if (sortBy === "quantity-asc") {
       filtered.sort((a, b) => a.quantity - b.quantity);

@@ -1,7 +1,41 @@
-import { reportData } from "../data/reportMockData";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-// Helper component for displaying stats
+interface ReportData {
+  incomeExpenses: {
+    pawnToday: number;
+    pawnThisMonth: number;
+    interestThisMonth: number;
+  };
+  stock: {
+    totalItemCount: number;
+    totalGoldBaht: number;
+    totalGoldGrams: number;
+  };
+  pawn: {
+    newCustomersToday: number;
+    newCustomersThisMonth: number;
+    outstandingItemsCount: number;
+    overdueItems: OverdueItem[];
+  };
+  overdueCustomers: OverdueCustomer[];
+}
+
+interface OverdueItem {
+  id: number;
+  customerName: string;
+  pawnNumber: string;
+  dueDate: string;
+}
+
+interface OverdueCustomer {
+  id: number;
+  name: string;
+  phone: string;
+  overdueDays: number;
+}
+
 const StatCard = ({
   title,
   value,
@@ -37,122 +71,96 @@ const Section = ({
 
 export default function ReportPage() {
   const navigate = useNavigate();
-  const { income_expenses, stock, pawn, customers } = reportData;
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/api/reports/full")
+      .then((res) => {
+        setReportData(res.data);
+      })
+      .catch((err) => console.error("Failed to fetch report data", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="p-6">กำลังโหลดข้อมูลรายงาน...</div>;
+  }
+
+  if (!reportData) {
+    return <div className="p-6 text-red-500">ไม่สามารถโหลดข้อมูลรายงานได้</div>;
+  }
+
+  const { incomeExpenses, stock, pawn, overdueCustomers } = reportData;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen space-y-6">
       <h1 className="text-3xl font-bold text-gray-800">หน้ารายงานสรุป</h1>
 
-      {/* Income / Expenses Section */}
       <Section title="📊 รายได้ / รายจ่าย">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <StatCard
             title="ยอดจำนำวันนี้"
-            value={income_expenses.pawn_today}
+            value={incomeExpenses.pawnToday}
             unit="บาท"
           />
           <StatCard
             title="ยอดจำนำเดือนนี้"
-            value={income_expenses.pawn_this_month}
+            value={incomeExpenses.pawnThisMonth}
             unit="บาท"
           />
           <StatCard
-            title="รายได้ขาย/เปลี่ยน"
-            value={income_expenses.sales_income}
-            unit="บาท"
-          />
-          <StatCard
-            title="ยอดถอนสินค้า"
-            value={income_expenses.redeem_amount}
-            unit="บาท"
-          />
-          <StatCard
-            title="ดอกเบี้ยที่ควรได้(วันนี้)"
-            value={income_expenses.expected_interest_today}
-            unit="บาท"
-          />
-          <StatCard
-            title="ดอกเบี้ยที่ควรได้(เดือนนี้)"
-            value={income_expenses.expected_interest_this_month}
+            title="ดอกเบี้ยรับเดือนนี้"
+            value={incomeExpenses.interestThisMonth}
             unit="บาท"
           />
         </div>
       </Section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stock Section */}
         <Section title="📦 สต็อกสินค้า">
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-gray-800">
-                รายการสินค้าในร้าน
-              </h3>
-              <ul className="divide-y divide-gray-200 mt-2 max-h-60 overflow-y-auto">
-                {stock.items.map((item) => (
-                  <li
-                    key={item.id}
-                    className="py-2 flex justify-between items-center"
-                  >
-                    <span>
-                      {item.name}{" "}
-                      <span className="text-xs text-gray-500">
-                        ({item.type})
-                      </span>
-                    </span>
-                    <span className="font-medium text-blue-600">
-                      {item.quantity} ชิ้น
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="border-t pt-4 space-y-2">
-              <h3 className="font-semibold text-gray-800">
-                จำนวนทองรวมในสต็อก
-              </h3>
-              <p className="text-lg font-bold">
-                {stock.total_gold_baht.toLocaleString()}{" "}
-                <span className="text-base font-normal">บาท</span>
-              </p>
-              <p className="text-lg font-bold">
-                {stock.total_gold_grams.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                <span className="text-base font-normal">กรัม</span>
-              </p>
-            </div>
+          <div className="border-t pt-4 space-y-2">
+            <h3 className="font-semibold text-gray-800">จำนวนทองรวมในสต็อก</h3>
+            <p className="text-lg font-bold">
+              {stock.totalGoldBaht.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{" "}
+              <span className="text-base font-normal">บาท</span>
+            </p>
+            <p className="text-lg font-bold">
+              {stock.totalGoldGrams.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{" "}
+              <span className="text-base font-normal">กรัม</span>
+            </p>
           </div>
         </Section>
 
-        {/* Pawn Section */}
         <Section title="💰 จำนำ">
           <div className="grid grid-cols-2 gap-4">
             <StatCard
               title="ลูกค้าใหม่ (วันนี้)"
-              value={pawn.new_customers_today}
+              value={pawn.newCustomersToday}
               unit="คน"
             />
             <StatCard
               title="ลูกค้าใหม่ (เดือนนี้)"
-              value={pawn.new_customers_this_month}
+              value={pawn.newCustomersThisMonth}
               unit="คน"
             />
             <StatCard
               title="รายการที่ยังไม่ถอน"
-              value={pawn.outstanding_items_count}
-              unit="รายการ"
-            />
-            <StatCard
-              title="รายการต่อดอก"
-              value={pawn.interest_renewals_count}
+              value={pawn.outstandingItemsCount}
               unit="รายการ"
             />
           </div>
           <div className="mt-4">
             <h3 className="font-semibold text-gray-800">รายการที่เลยกำหนด</h3>
             <ul className="divide-y divide-gray-200 mt-2 max-h-40 overflow-y-auto">
-              {pawn.overdue_items.map((item) => (
+              {pawn.overdueItems.map((item) => (
                 <li
                   key={item.id}
                   className="py-2 flex justify-between items-center"
@@ -181,7 +189,6 @@ export default function ReportPage() {
         </Section>
       </div>
 
-      {/* Customers Section */}
       <Section title="👥 ลูกค้าที่ค้างเกินกำหนด">
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
@@ -194,12 +201,12 @@ export default function ReportPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {customers.overdue_customers.map((cust) => (
+              {overdueCustomers.map((cust) => (
                 <tr key={cust.id} className="hover:bg-yellow-50">
                   <td className="py-2 px-4">{cust.name}</td>
                   <td className="py-2 px-4">{cust.phone}</td>
                   <td className="py-2 px-4 text-red-600 font-semibold">
-                    {cust.overdue_days}
+                    {cust.overdueDays}
                   </td>
                   <td className="py-2 px-4">
                     <button

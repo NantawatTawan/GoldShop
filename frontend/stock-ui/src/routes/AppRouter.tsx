@@ -10,6 +10,7 @@ import UserPage from "../pages/UserPage";
 import EmployeePage from "../pages/EmployeePage";
 import PawnDetailPage from "../pages/PawnDetailPage";
 import ReportPage from "../pages/ReportPage";
+import NotificationPage from "../pages/NotificationPage";
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -29,6 +30,7 @@ export default function AppRouter() {
           <Route path="/users" element={<UserPage />} />
           <Route path="/employees" element={<EmployeePage />} />
           <Route path="/reports" element={<ReportPage />} />
+          <Route path="/notifications" element={<NotificationPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

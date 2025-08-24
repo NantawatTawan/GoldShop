@@ -23,6 +23,9 @@ public class StockItem {
     @Column(length = 10)
     private String unit;
 
+    @Column(name = "weight_in_grams", precision = 10, scale = 3)
+    private BigDecimal weightInGrams;
+
     private Integer quantity;
 
     @Column(columnDefinition = "TEXT")

@@ -8,9 +8,12 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 
 @Service
@@ -20,32 +23,44 @@ public class StockItemService {
 
     private final StockItemRepository stockItemRepository;
     private final StockTypeRepository stockTypeRepository;
+    private static final BigDecimal BAHT_TO_GRAMS = new BigDecimal("15.244");
 
-    //ดึงสินค้าทั้งหมด
-    public List<StockItem> getAllItems() {
-        return stockItemRepository.findAll();
+    public List<StockItem> getAllItems(Sort sort) {
+        return stockItemRepository.findAll(sort);
     }
 
-    //ดึงสินค้าตาม id
+    private void calculateAndSetWeightInGrams(StockItem item) {
+        if (item.getWeightValue() == null || item.getUnit() == null) {
+            item.setWeightInGrams(BigDecimal.ZERO);
+            return;
+        }
+
+        if ("บาท".equalsIgnoreCase(item.getUnit())) {
+            item.setWeightInGrams(item.getWeightValue().multiply(BAHT_TO_GRAMS).setScale(3, RoundingMode.HALF_UP));
+        } else if ("กรัม".equalsIgnoreCase(item.getUnit())) {
+            item.setWeightInGrams(item.getWeightValue().setScale(3, RoundingMode.HALF_UP));
+        } else {
+            item.setWeightInGrams(BigDecimal.ZERO);
+        }
+    }
+
     public StockItem getItemById(Long id) {
         return stockItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Stock item not found"));
     }
 
-    //เพิ่มสินค้าใหม่
     public StockItem createItem(StockItem item) {
         item.setCreatedAt(LocalDateTime.now());
         item.setUpdatedAt(LocalDateTime.now());
 
-        //ตรวจสอบ type 
+        calculateAndSetWeightInGrams(item);
+
         StockType type = stockTypeRepository.findById(item.getType().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid stock type"));
-
         item.setType(type);
         return stockItemRepository.save(item);
     }
 
-    //แก้ไขสินค้า
     public StockItem updateItem(Long id, StockItem updatedItem) {
         StockItem existing = stockItemRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Stock item not found"));
@@ -57,16 +72,15 @@ public class StockItemService {
         existing.setNote(updatedItem.getNote());
         existing.setUpdatedAt(LocalDateTime.now());
 
-        //ตรวจสอบและอัปเดตประเภท
+        calculateAndSetWeightInGrams(existing);
+
         StockType type = stockTypeRepository.findById(updatedItem.getType().getId())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid stock type"));
-
         existing.setType(type);
 
         return stockItemRepository.save(existing);
     }
 
-    //ลบสินค้า
     @Transactional
     public void deleteItem(Long id) {
         if (!stockItemRepository.existsById(id)) {
