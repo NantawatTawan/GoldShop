@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function CustomLink({
   to,
@@ -30,9 +30,18 @@ function CustomLink({
 export default function MainLayout() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+      const userDataString = localStorage.getItem("user");
+      if (userDataString) {
+        const userData = JSON.parse(userDataString);
+        setUserName(userData.employeeName || "ผู้ใช้งาน");
+      }
+    }, []);
 
   const handleLogout = () => {
-    // ใส่ logic logout จริงตรงนี้ถ้ามี (เช่น clear localStorage)
+    localStorage.removeItem("user"); 
     navigate("/login");
   };
 
@@ -67,7 +76,7 @@ export default function MainLayout() {
         </div>
 
         <div className="mt-6 border-t pt-4">
-          <p className="text-sm text-gray-600 text-center mb-2">🧑‍💼 มณีลักษณ์</p>
+          <p className="text-sm text-gray-600 text-center mb-2">🧑‍💼 {userName}</p>
           <button
             onClick={handleLogout}
             className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded text-sm"
