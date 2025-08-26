@@ -64,8 +64,14 @@ public class TransactionService {
             return;
         }
 
-        for (StockItem newItem : request.getItemsToPurchase()) {
-             // ถ้าเป็นของเปลี่ยน ให้เพิ่มหมายเหตุ
+        for (TransactionRequestDto.PurchaseItemDto itemDto : request.getItemsToPurchase()) {
+            StockItem newItem = new StockItem();
+            newItem.setItemName(itemDto.getItemName());
+            newItem.setQuantity(itemDto.getQuantity());
+            newItem.setNote(itemDto.getNote());
+            // เพิ่ม field อื่น ๆ ตามที่ StockItem ต้องการ เช่น price, category ฯลฯ
+
+            // ถ้าเป็นของเปลี่ยน ให้เพิ่มหมายเหตุ
             if (request.getType() == com.maneelak.stockpawn.enums.TransactionType.EXCHANGE) {
                 String originalNote = newItem.getNote() != null ? newItem.getNote() : "";
                 newItem.setNote("เปลี่ยนจาก: [ระบุสินค้าเดิม] " + originalNote);
